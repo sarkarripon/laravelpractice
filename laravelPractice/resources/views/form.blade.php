@@ -84,11 +84,17 @@
         </thead>
         <tbody id="renderData">
 
-
         </tbody>
+
     </table>
 
     </div>
+{{--    pagination links--}}
+    <ul id="pagenation" style="list-style: none;">
+
+    </ul>
+
+
 </div>
 <!-- Button trigger modal -->
 <!-- Modal -->
@@ -133,10 +139,15 @@
                         <span class="text-danger" id="emailErrorMsg"></span><br>
                     </div>
                     <div class="mb-3">
-                        <input type="file" id="myFile" name="filename">
+                        <input type="file" id="myFile" onchange="preview()" name="filename">
+                        <img id="myImageFile" src="" width="100px" height="100px"/>
 
                         <span class="text-danger" id="myFileErrorMsg"></span><br>
                     </div>
+
+{{--                    <div class="col-md-12 mb-2" id="previewimage">--}}
+{{--                        <img  src="" alt="preview image" style="max-height: 250px;">--}}
+{{--                    </div>--}}
 
             </div>
             <div class="modal-footer">
@@ -232,6 +243,36 @@
                 <p id="salary" ></p>
             </div>
                 <hr>
+                <div>
+{{--                    <h6>Json Data</h6>--}}
+{{--                    <p id="jsonName" >Name: </p>--}}
+{{--                    <p id="jsonHeight" >Height</p>--}}
+{{--                    <p id="jsonWeight" >Weight</p>--}}
+{{--                    <p id="jsonBlood" >Blood</p>--}}
+{{--                    <p id="jsonEye" >Eye</p>--}}
+{{--                    <p id="jsonHair" >Hair</p>--}}
+{{--                    <p id="jsonOccupation" >Occupation</p>--}}
+{{--                    <p id="jsonMerital " >Merital</p>--}}
+{{--                    <p id="jsonAcademic" >Academic</p>--}}
+                    <table>
+                        <thead>
+                        <th>Name</th>
+                        <th>Height</th>
+                        <th>Weight</th>
+                        <th>Blood</th>
+                        <th>Eye</th>
+                        <th>Hair</th>
+                        <th>Occu</th>
+                        <th>Merital</th>
+                        <th>Aca</th>
+                        </thead>
+                        <tbody id="jsondata">
+
+                        </tbody>
+                    </table>
+
+                </div>
+                <hr>
             <div>
                 <p id="nodata" ></p>
             </div>
@@ -296,7 +337,7 @@
 
                 },
                 error: function (response) {
-                    console.log( response );
+                    // console.log( response );
                 },
             } );
         }
@@ -319,7 +360,7 @@
                 $('#id').val(response.id);
             },
             error: function (response) {
-                console.log( response );
+                // console.log( response );
             },
         } );
 
@@ -334,51 +375,68 @@
             data: {
             },
             success: function (response) {
-                console.log(response);
+                // console.log(response);
+
+                let metaDecode = $.makeArray(response.metaDecode);
+                // console.log(metaDecode);
+                let metaData = '';
+
                 $("#modalview").modal("show");
                 if(jQuery.isEmptyObject( response )) {
-                    console.log('if block')
+                    // console.log('if block')
                     $( '#basic' ).empty();
                     $( '#history' ).empty();
                     $( '#salary' ).empty();
                     $( '#nodata' ).append('No data found');
 
                 }else {
-                    console.log('else block')
-                    $( '#basic' ).append( response.fname );
-                    $( '#history' ).append( response.joining_date );
-                    $( '#salary' ).append( response.basic_salary );
-                    $( '#nodata' ).empty();
+                    // console.log('else block')
+                    $( '#basic' ).append(response.fname );
+                    $( '#history' ).append(response.joining_date);
+                    $( '#salary' ).append(response.modalview.basic_salary);
+
+                    $.each( metaDecode, function (index, value) {
+
+                        metaData += '<tr>';
+                        metaData += '<td>' + value;
+                        $( '#jsonName' ).append( response.metaDecode.fname + ' ' + response.metaDecode.lname );
+                        $( '#jsonOccupation' ).append( response.metaDecode );
+                        $( '#nodata' ).empty();
+                    });
 
                 }
 
             },
             error: function (response) {
-                console.log( response );
+                // console.log( response );
             },
         } );
 
     }
     // let editMode = false;
 
-    function getData(searchKeyword = '', changeKeyword = '' )
+    function getData(searchKeyword = '', changeKeyword = '', page = 1)
     {
+        let per_page = 3;
+        let currentUrl = "/spa/list?search="+searchKeyword+"&change="+changeKeyword+"&per_page="+per_page+"&page="+page;
         $.ajax( {
             // url from the route
-            url: "/spa/list?search="+searchKeyword+"&change="+changeKeyword,
+            url: currentUrl,
             type: "GET",
             data: {
             },
             success: function (response) {
 
-                let data = response;
+                // console.log(response.data)
+                let data = response.data;
+                let links = response.links;
+                let singlePage = '';
+
                 var list_data = '';
 
-                if(response.length >0) {
-
+                if(data.length >0) {
 
                     $.each( data, function (index, value) {
-                        /*console.log(value);*/
                         list_data += '<tr>';
                         list_data += '<td>' + value.fname + '</td>';
                         list_data += '<td>' + value.lname + '</td>';
@@ -390,23 +448,41 @@
                 }else {
                     list_data +='<tr> <td class="noData" colspan="4">No data found</td> </tr>';
                 }
+
+                $.each( links, function (index, value) {
+                    singlePage += '<li style="float:left;margin-right: 10px">';
+                    // singlePage += '<a href=" '+value.url+' ">'+value.label+'</a>';
+                    singlePage += '<a href=" javascript:getPaginate('+value.label+') ">'+value.label+'</a>';
+                    singlePage += '</li>';
+
+                });
+                $( "#pagenation" ).empty();
                 $("#renderData").empty();
                 $('.table-loading-overlay').css("opacity", "1");
                 $("#renderData").append(list_data);
-
+                $( "#pagenation" ).append( singlePage);
 
             },
             error: function (response) {
-                console.log( response );
+                // console.log( response );
             },
         } );
     }
+
+    function getPaginate(page){
+        getData('','',page);
+    }
+
+    function preview() {
+        var files = $('#myFile')[0].files;
+        myImageFile.src= URL.createObjectURL(files[0]);
+    }
+
 
     $( '#SubmitForm' ).on( 'submit', function (e) {
         e.preventDefault();
 
         var files = $('#myFile')[0].files;
-
         var fd = new FormData();
 
         fd.append('fname', $( '#fname' ).val());
@@ -420,6 +496,7 @@
         let form_lname = $( '#lname' ).val();
         let form_email = $( '#email' ).val();
         let form_myFile = $( '#myFile' ).val();
+
 
 
         // remove error messages from the specific field where data is present
@@ -453,17 +530,14 @@
                     $( '#sucessMessage' ).append('');
                 }, 2000);
                 getData();
-
-
             },
             error: function (response) {
-                console.log( response );
+                // console.log( response );
                 // $("#exampleModal").modal('hide');
                 $( '#fnameErrorMsg' ).text( response.responseJSON.errors.fname );
                 $( '#lnameErrorMsg' ).text( response.responseJSON.errors.lname );
                 $( '#emailErrorMsg' ).text( response.responseJSON.errors.email );
                 $( '#myFileErrorMsg' ).text( response.responseJSON.errors.myFile );
-
             },
         } );
     } );
@@ -508,7 +582,7 @@
 
             },
             error: function (response) {
-                console.log( response );
+                // console.log( response );
                 $( '#firstnameErrorMsg' ).text( response.responseJSON.errors.firstname );
                 $( '#lastnameErrorMsg' ).text( response.responseJSON.errors.lastname );
                 $( '#ajemailErrorMsg' ).text( response.responseJSON.errors.ajemail );

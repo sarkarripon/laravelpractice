@@ -12,7 +12,11 @@ class FormController extends Controller
 {
     public function view()
     {
+
         return view('form');
+
+//        $users = AjaxForm::paginate(3);
+//        return view('form')->with('users', $users);
     }
 
     public function store(Request $request)
@@ -75,7 +79,6 @@ class FormController extends Controller
         $sendmail = $this->email($emailContent,$singleDataNew);
         if($sendmail){
             return response()->json(['success' => 'Contact created successfully!']);
-
         }
     }
     public function optin($id)
@@ -124,14 +127,20 @@ class FormController extends Controller
     public function formmetavalue($id)
     {
         $formmetavalue = AjaxForm::find($id);
-        $data = json_encode($formmetavalue);
-        return response()->json(['data' => $data]);
+//        $decodedData = $formmetavalue;
+//        $metaDecode = json_decode($decodedData->form_meta);
+//
+//        return response()->json($metaDecode);
 
+//        return view('jsonresponse')
+//            ->with('IloveYou', $decodedData)
+//            ->with('anotherVariable', $metaDecode);
 
+    }
 
-
-
-        return response()->json($formmetavalue);
+    public function token()
+    {
+        echo csrf_token();
 
     }
     public function email($emailContent,$singleData)
@@ -151,8 +160,10 @@ class FormController extends Controller
     {
         $searchKeyword = $request->search;
         $changeKeyword = $request->change;
+        $per_page = $request->per_page;
 
         $query = AjaxForm::query();
+//        $query = DB::table('ajax_forms')->paginate(10);
 
         $query->when($searchKeyword != '', function ($query) use ($searchKeyword) {
 
@@ -165,7 +176,8 @@ class FormController extends Controller
             $query->where('status', $changeKeyword);
         });
 
-        $readData = $query->get();
+//        $readData = $query->paginate(10);
+        $readData = $query->paginate($per_page);
         return response()->json($readData);
 
     }
@@ -173,13 +185,20 @@ class FormController extends Controller
     public function modalview($id)
     {
         // for ambiguous id, i have to mention the desired id field
+//        DB::enableQueryLog();
         $modalview = DB::table('ajax_forms')
             ->join('ajax_salary', 'ajax_forms.id', '=', 'ajax_salary.ajf_id')
             ->join('ajax_em_history', 'ajax_salary.id', '=', 'ajax_em_history.salary_id')
             ->where('ajax_forms.id', '=', $id)
             ->first();
 
-        return response()->json($modalview);
+//        $query = DB::getQueryLog();
+//        dd($query);
+
+        $decodedData = $modalview;
+        $metaDecode = json_decode($decodedData->form_meta);
+        return response()->json(['metaDecode' => (array) $metaDecode, 'modalview'=>$modalview]);
+
     }
 
     public function edit($id)
